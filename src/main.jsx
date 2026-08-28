@@ -23,14 +23,15 @@ import {
   FaEnvelope,
 } from "react-icons/fa6";
 import "./styles.css";
+const asset = (filename) => `${import.meta.env.BASE_URL}${filename}`;
 const fb = "https://www.facebook.com/Drhassan74",
-  photo = "/dr-hassan-consultation.jpg";
+  photo = asset("dr-hassan-consultation.jpg");
 const instagram = "https://www.instagram.com/drhassan74/";
 const youtube = "https://www.youtube.com/@drHassan74";
 const tiktok = "https://www.tiktok.com/@drHassan19";
 const whatsapp = "https://wa.me/252615516912";
 const messenger = "https://m.me/Drhassan74";
-const surgeryPhoto = "/dr-hassan-surgery.png";
+const surgeryPhoto = asset("dr-hassan-surgery.png");
 const services = [
   [
     "General Surgery",
@@ -102,22 +103,22 @@ const gallery = [
     alt: "Dr Hassan Ali performing surgery",
   },
   {
-    src: "/gallery-laparoscopic-team.jpg",
+    src: asset("gallery-laparoscopic-team.jpg"),
     title: "Laparoscopic procedure",
     alt: "Dr Hassan Ali and his team during a laparoscopic procedure",
   },
   {
-    src: "/gallery-surgical-care.jpg",
+    src: asset("gallery-surgical-care.jpg"),
     title: "Focused surgical practice",
     alt: "Dr Hassan Ali providing surgical care",
   },
   {
-    src: "/gallery-surgical-team.jpg",
+    src: asset("gallery-surgical-team.jpg"),
     title: "Surgical teamwork",
     alt: "Dr Hassan Ali working with a surgical team",
   },
   {
-    src: "/gallery-laparoscopy.jpg",
+    src: asset("gallery-laparoscopy.jpg"),
     title: "Laparoscopic surgery",
     alt: "Dr Hassan Ali using laparoscopic instruments",
   },
@@ -129,7 +130,7 @@ function App() {
     <>
       <header>
         <a className="logo" href="#top">
-          <img src="/dr-hassan-profile.jpg" alt="Dr Hassan Ali logo" />
+          <img src={asset("dr-hassan-profile.jpg")} alt="Dr Hassan Ali logo" />
           <span>
             Dr Hassan Ali<small>General & Laparoscopic Surgeon</small>
           </span>
@@ -476,7 +477,7 @@ function App() {
       </main>
       <footer>
         <a className="logo" href="#top">
-          <img src="/dr-hassan-profile.jpg" alt="Dr Hassan Ali logo" />
+          <img src={asset("dr-hassan-profile.jpg")} alt="Dr Hassan Ali logo" />
           <span>
             Dr Hassan Ali<small>General & Laparoscopic Surgeon</small>
           </span>
