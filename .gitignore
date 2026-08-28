@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vite/
+.env
+.env.*
+!.env.example
+*.log
+
+# Local visual-check screenshots
+gallery-check.png
+gallery-section-check.png
