@@ -333,39 +333,55 @@ function App() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const message = [
+                "*Appointment request — Dr Hassan Ali*",
+                "",
+                `Name: ${formData.get("fullName")}`,
+                `Phone: ${formData.get("phone")}`,
+                `Preferred date: ${formData.get("date")}`,
+                `Preferred time: ${formData.get("time")}`,
+                `Reason for visit: ${formData.get("reason")}`,
+              ].join("\n");
+              window.open(
+                `${whatsapp}?text=${encodeURIComponent(message)}`,
+                "_blank",
+                "noopener,noreferrer",
+              );
               setOk(true);
             }}
           >
             {ok ? (
               <div className="success">
                 <CheckCircle2 />
-                <h3>Request received</h3>
-                <p>Staff will follow up to confirm availability.</p>
+                <h3>WhatsApp is ready</h3>
+                <p>Press Send in WhatsApp to submit your request.</p>
               </div>
             ) : (
               <>
                 <label>
                   Full name
-                  <input required placeholder="Your full name" />
+                  <input required name="fullName" placeholder="Your full name" />
                 </label>
                 <label>
                   Phone number
-                  <input required placeholder="Your phone number" />
+                  <input required name="phone" placeholder="Your phone number" />
                 </label>
                 <div className="two">
                   <label>
                     Preferred date
-                    <input required type="date" />
+                    <input required name="date" type="date" />
                   </label>
                   <label>
                     Preferred time
-                    <input required type="time" />
+                    <input required name="time" type="time" />
                   </label>
                 </div>
                 <label>
                   Reason for visit
                   <textarea
                     required
+                    name="reason"
                     placeholder="Briefly tell us how we can help"
                   />
                 </label>
