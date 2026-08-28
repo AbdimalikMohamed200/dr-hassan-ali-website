@@ -32,6 +32,8 @@ const tiktok = "https://www.tiktok.com/@drHassan19";
 const whatsapp = "https://wa.me/252615516912";
 const messenger = "https://m.me/Drhassan74";
 const surgeryPhoto = asset("dr-hassan-surgery.png");
+const namePattern = "^[A-Za-zÀ-ÿ' -]+$";
+const phonePattern = "^\\+?[0-9 ]{7,15}$";
 const services = [
   [
     "General Surgery",
@@ -125,7 +127,20 @@ const gallery = [
 ];
 function App() {
   let [m, setM] = useState(false),
-    [ok, setOk] = useState(false);
+    [ok, setOk] = useState(false),
+    [selectedDate, setSelectedDate] = useState("");
+  const keepLetters = (value) =>
+    value.replace(/[^A-Za-zÀ-ÿ' -]+/g, "").replace(/\s+/g, " ").trimStart();
+  const keepDigits = (value) => value.replace(/[^\d+ ]+/g, "");
+  const todayIso = new Date().toLocaleDateString("en-CA");
+  const nowTime = new Date()
+    .toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+    .slice(0, 5);
+  const timeMin = selectedDate === todayIso ? nowTime : "00:00";
   return (
     <>
       <header>
@@ -334,13 +349,39 @@ function App() {
             onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+              const fullName = String(formData.get("fullName") ?? "").trim();
+              const phone = String(formData.get("phone") ?? "").trim();
+
+              if (!new RegExp(namePattern).test(fullName)) {
+                alert("Magaca waa inuu noqdaa xarfo keliya.");
+                return;
+              }
+
+              if (!new RegExp(phonePattern).test(phone)) {
+                alert("Telefoonku waa inuu noqdaa lambarro keliya.");
+                return;
+              }
+
+              const date = String(formData.get("date") ?? "");
+              const time = String(formData.get("time") ?? "");
+
+              if (date < todayIso) {
+                alert("Taariikh hore lama oggola.");
+                return;
+              }
+
+              if (date === todayIso && time < nowTime) {
+                alert("Saacad hore oo maanta ah lama oggola.");
+                return;
+              }
+
               const message = [
                 "*Appointment request — Dr Hassan Ali*",
                 "",
-                `Name: ${formData.get("fullName")}`,
-                `Phone: ${formData.get("phone")}`,
-                `Preferred date: ${formData.get("date")}`,
-                `Preferred time: ${formData.get("time")}`,
+                `Name: ${fullName}`,
+                `Phone: ${phone}`,
+                `Preferred date: ${date}`,
+                `Preferred time: ${time}`,
                 `Reason for visit: ${formData.get("reason")}`,
               ].join("\n");
               window.open(
@@ -361,20 +402,48 @@ function App() {
               <>
                 <label>
                   Full name
-                  <input required name="fullName" placeholder="Your full name" />
+                  <input
+                    required
+                    name="fullName"
+                    placeholder="Your full name"
+                    autoComplete="name"
+                    inputMode="text"
+                    pattern={namePattern}
+                    onInput={(e) => {
+                      e.currentTarget.value = keepLetters(e.currentTarget.value);
+                    }}
+                    title="Magaca waa inuu noqdaa xarfo iyo meel bannaan kaliya."
+                  />
                 </label>
                 <label>
                   Phone number
-                  <input required name="phone" placeholder="Your phone number" />
+                  <input
+                    required
+                    name="phone"
+                    placeholder="Your phone number"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    pattern={phonePattern}
+                    onInput={(e) => {
+                      e.currentTarget.value = keepDigits(e.currentTarget.value);
+                    }}
+                    title="Telefoonku waa inuu noqdaa lambarro kaliya."
+                  />
                 </label>
                 <div className="two">
                   <label>
                     Preferred date
-                    <input required name="date" type="date" />
+                    <input
+                      required
+                      name="date"
+                      type="date"
+                      min={todayIso}
+                      onChange={(e) => setSelectedDate(e.currentTarget.value)}
+                    />
                   </label>
                   <label>
                     Preferred time
-                    <input required name="time" type="time" />
+                    <input required name="time" type="time" min={timeMin} />
                   </label>
                 </div>
                 <label>
