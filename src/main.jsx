@@ -55,7 +55,7 @@ const copy = {
     book: "Book appointment",
     specialty: "General & Laparoscopic Surgeon",
     heroLabel: "Dufle Hospital · Mogadishu",
-    heroTitle: <>Trusted surgical care,<i> thoughtfully delivered.</i></>,
+    heroTitle: "Trusted surgical care, thoughtfully delivered.",
     heroIntro: "Dr Hassan Ali is an experienced General & Laparoscopic/Endoscopic Surgeon with over 15 years of professional experience.",
     request: "Request appointment",
     discover: "Discover more",
@@ -122,7 +122,7 @@ const copy = {
     book: "Qabso ballan",
     specialty: "Dhakhtar Qalliinka Guud iyo Laparoscopic",
     heroLabel: "Isbitaalka Dufle · Muqdisho",
-    heroTitle: <>Daryeel qalliin oo lagu kalsoon yahay,<i> si taxaddar leh loo bixiyo.</i></>,
+    heroTitle: "Daryeel qalliin oo lagu kalsoon yahay, si taxaddar leh loo bixiyo.",
     heroIntro: "Dr Hassan Ali waa dhakhtar khibrad leh oo ku takhasusay qalliinka guud, laparoscopic iyo endoscopic, isaga oo leh in ka badan 15 sano oo waayo-aragnimo ah.",
     request: "Codso ballan",
     discover: "Wax badan ogow",
@@ -189,7 +189,7 @@ const copy = {
     book: "احجز موعداً",
     specialty: "جرّاح عام وجراح منظار",
     heroLabel: "مستشفى دوفلي · مقديشو",
-    heroTitle: <>رعاية جراحية موثوقة،<i> تُقدّم بعناية.</i></>,
+    heroTitle: "رعاية جراحية موثوقة، تُقدّم بعناية.",
     heroIntro: "الدكتور حسن علي جرّاح عام وجراح منظار وجراحة بالمنظار، يتمتع بخبرة مهنية تزيد على 15 عاماً.",
     request: "طلب موعد",
     discover: "اكتشف المزيد",
@@ -262,12 +262,117 @@ const gallery = [
   { src: asset("gallery-laparoscopy.jpg") },
 ];
 
+const siteContentDefaults = Object.fromEntries(
+  Object.entries(copy).map(([code, content]) => [code, {
+    heroTitle: content.heroTitle,
+    heroIntro: content.heroIntro,
+    aboutTitle: content.aboutTitle,
+    aboutText: content.aboutText,
+    historyTitle: content.historyTitle,
+    historyText: content.historyText,
+    servicesTitle: content.servicesTitle,
+    servicesText: content.servicesText,
+    serviceNames: [...content.serviceNames],
+    serviceDescriptions: [...content.serviceDescriptions],
+    quote: content.quote,
+    galleryTitle: content.galleryTitle,
+    galleryItems: gallery.map((item, index) => ({
+      src: item.src,
+      title: content.galleryTitles[index],
+      alt: content.galleryAlts[index],
+    })),
+    appointmentTitle: content.appointmentTitle,
+    appointmentText: content.appointmentText,
+    contactTitle: content.contactTitle,
+    contactText: content.contactText,
+  }]),
+);
+
+const contentStorageKey = "dr-hassan-site-content";
+const readSiteContent = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(contentStorageKey) || "null");
+    if (!saved) return siteContentDefaults;
+    return Object.fromEntries(Object.entries(siteContentDefaults).map(([code, defaults]) => [
+      code,
+      { ...defaults, ...(saved[code] || {}) },
+    ]));
+  } catch {
+    return siteContentDefaults;
+  }
+};
+
+function AdminPanel({ language, setLanguage, siteContent, setSiteContent, onExit }) {
+  const [loggedIn, setLoggedIn] = useState(() => sessionStorage.getItem("dr-hassan-admin-session") === "active");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const current = siteContent[language];
+
+  const update = (field, value) => {
+    setSiteContent((previous) => ({
+      ...previous,
+      [language]: { ...previous[language], [field]: value },
+    }));
+  };
+
+  const updateService = (field, index, value) => {
+    const values = [...current[field]];
+    values[index] = value;
+    update(field, values);
+  };
+
+  const updateGallery = (index, field, value) => {
+    const items = current.galleryItems.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item);
+    update("galleryItems", items);
+  };
+
+  const addGalleryItem = () => {
+    update("galleryItems", [...current.galleryItems, { src: "", title: "New gallery item", alt: "Gallery image" }]);
+  };
+
+  const removeGalleryItem = (index) => {
+    update("galleryItems", current.galleryItems.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const login = (event) => {
+    event.preventDefault();
+    if (email.trim().toLowerCase() === "admin@drhassan.com" && password === "Admin123!") {
+      sessionStorage.setItem("dr-hassan-admin-session", "active");
+      setLoggedIn(true);
+      setLoginError("");
+    } else {
+      setLoginError("Demo login: admin@drhassan.com / Admin123!");
+    }
+  };
+
+  if (!loggedIn) {
+    return <main className="admin-page"><section className="admin-login"><p className="label">Private area</p><h1>Admin dashboard</h1><p>Sign in to edit the website content locally.</p><form onSubmit={login}><label>Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@drhassan.com" /></label><label>Password<input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Admin123!" /></label>{loginError && <p className="admin-error">{loginError}</p>}<button className="cta" type="submit">Sign in</button></form><a className="link" href="#top" onClick={onExit}>Back to website <ArrowRight /></a></section></main>;
+  }
+
+  return <main className="admin-page"><section className="admin-shell">
+    <div className="admin-header"><div><p className="label">Content management</p><h1>Admin dashboard</h1><p>Changes are saved in this browser for local testing.</p></div><div className="admin-header-actions"><select value={language} onChange={(event) => setLanguage(event.target.value)} aria-label="Content language">{languages.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select><button className="admin-ghost" onClick={() => { sessionStorage.removeItem("dr-hassan-admin-session"); setLoggedIn(false); }}>Log out</button><a className="admin-ghost" href="#top" onClick={onExit}>View site</a></div></div>
+    <div className="admin-notice">Local prototype only. Before production, this login will be connected to Supabase Auth and the content will be stored in a protected database.</div>
+    <div className="admin-grid">
+      <section className="admin-card"><h2>Hero & about</h2><label>Hero title<textarea value={current.heroTitle} onChange={(event) => update("heroTitle", event.target.value)} /></label><label>Hero introduction<textarea value={current.heroIntro} onChange={(event) => update("heroIntro", event.target.value)} /></label><label>About title<input value={current.aboutTitle} onChange={(event) => update("aboutTitle", event.target.value)} /></label><label>About text<textarea value={current.aboutText} onChange={(event) => update("aboutText", event.target.value)} /></label></section>
+      <section className="admin-card"><h2>Services</h2>{current.serviceNames.map((name, index) => <div className="admin-service" key={`service-${index}`}><label>Service {index + 1}<input value={name} onChange={(event) => updateService("serviceNames", index, event.target.value)} /></label><label>Description<textarea value={current.serviceDescriptions[index]} onChange={(event) => updateService("serviceDescriptions", index, event.target.value)} /></label></div>)}</section>
+      <section className="admin-card"><h2>Experience section</h2><label>Section title<input value={current.historyTitle} onChange={(event) => update("historyTitle", event.target.value)} /></label><label>Section description<textarea value={current.historyText} onChange={(event) => update("historyText", event.target.value)} /></label><label>Professional quote<textarea value={current.quote} onChange={(event) => update("quote", event.target.value)} /></label></section>
+      <section className="admin-card"><h2>Appointment & contact</h2><label>Appointment title<input value={current.appointmentTitle} onChange={(event) => update("appointmentTitle", event.target.value)} /></label><label>Appointment text<textarea value={current.appointmentText} onChange={(event) => update("appointmentText", event.target.value)} /></label><label>Contact title<input value={current.contactTitle} onChange={(event) => update("contactTitle", event.target.value)} /></label><label>Contact text<textarea value={current.contactText} onChange={(event) => update("contactText", event.target.value)} /></label></section>
+    </div>
+    <section className="admin-card admin-gallery"><div className="admin-card-heading"><div><h2>Gallery</h2><p>Add an image URL now; Supabase Storage will handle uploads in the production version.</p></div><button className="cta" onClick={addGalleryItem}>Add image</button></div>{current.galleryItems.map((item, index) => <div className="admin-gallery-row" key={`gallery-${index}`}><div className="admin-gallery-preview">{item.src ? <img src={item.src} alt="" /> : <span>No image</span>}</div><label>Image URL<input value={item.src} onChange={(event) => updateGallery(index, "src", event.target.value)} placeholder="/image.jpg or https://..." /></label><label>Title<input value={item.title} onChange={(event) => updateGallery(index, "title", event.target.value)} /></label><label>Alt text<input value={item.alt} onChange={(event) => updateGallery(index, "alt", event.target.value)} /></label><button className="admin-remove" onClick={() => removeGalleryItem(index)}>Remove</button></div>)}</section>
+    <div className="admin-footer"><button className="admin-reset" onClick={() => setSiteContent((previous) => ({ ...previous, [language]: siteContentDefaults[language] }))}>Reset {languages.find((item) => item.code === language)?.label} defaults</button><span>Saved automatically in localStorage.</span></div>
+  </section></main>;
+}
+
 function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem("site-language") || "en");
+  const [siteContent, setSiteContent] = useState(readSiteContent);
+  const [adminView, setAdminView] = useState(() => window.location.hash === "#admin");
   const [menuOpen, setMenuOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const t = copy[language] || copy.en;
+  const content = { ...t, ...(siteContent[language] || {}) };
   const direction = language === "ar" ? "rtl" : "ltr";
 
   useEffect(() => {
@@ -276,6 +381,16 @@ function App() {
     document.title = language === "ar" ? "الدكتور حسن | معلومات طبية" : language === "so" ? "Dr Hassan | Macluumaad Caafimaad" : "Dr Hassan | Medical Information";
     localStorage.setItem("site-language", language);
   }, [language, direction]);
+
+  useEffect(() => {
+    localStorage.setItem(contentStorageKey, JSON.stringify(siteContent));
+  }, [siteContent]);
+
+  useEffect(() => {
+    const onHashChange = () => setAdminView(window.location.hash === "#admin");
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   const keepLetters = (value) => value.replace(/[^\p{L}\p{M}' -]+/gu, "").replace(/\s+/g, " ").trimStart();
   const keepDigits = (value) => value.replace(/[^\d+ ]+/g, "");
@@ -287,6 +402,10 @@ function App() {
     setLanguage(event.target.value);
     setMenuOpen(false);
   };
+
+  if (adminView) {
+    return <AdminPanel language={language} setLanguage={setLanguage} siteContent={siteContent} setSiteContent={setSiteContent} onExit={() => { window.location.hash = "top"; setAdminView(false); }} />;
+  }
 
   return (
     <>
@@ -306,18 +425,18 @@ function App() {
         </nav>
       </header>
       <main id="top">
-        <section className="hero"><div><p className="label">{t.heroLabel}</p><h1>{t.heroTitle}</h1><p className="intro">{t.heroIntro}</p><p className="actions"><a className="cta" href="#appointment"><CalendarDays /> {t.request}</a><a className="link" href="#about">{t.discover} <ArrowRight /></a></p><div className="stats"><span><b>15+</b>{t.years}</span><span><b>3</b>{t.areas}</span></div></div><figure className="hero-photo"><img src={photo} alt="Dr Hassan Ali" /><figcaption><b>Dr Hassan Ali</b><small>{t.surgeon}</small></figcaption></figure></section>
+        <section className="hero"><div><p className="label">{t.heroLabel}</p><h1>{content.heroTitle}</h1><p className="intro">{content.heroIntro}</p><p className="actions"><a className="cta" href="#appointment"><CalendarDays /> {t.request}</a><a className="link" href="#about">{t.discover} <ArrowRight /></a></p><div className="stats"><span><b>15+</b>{t.years}</span><span><b>3</b>{t.areas}</span></div></div><figure className="hero-photo"><img src={photo} alt="Dr Hassan Ali" /><figcaption><b>Dr Hassan Ali</b><small>{t.surgeon}</small></figcaption></figure></section>
         <section className="strip"><span><Stethoscope /> {t.general}</span><span><ShieldCheck /> {t.laparoscopic}</span><span><BookOpen /> {t.endoscopic}</span></section>
-        <section className="about section" id="about"><div className="photo-frame"><img src={surgeryPhoto} alt={t.galleryAlts[1]} /><b>15+<small>{t.years}</small></b></div><div><p className="label">{t.aboutLabel}</p><h2>{t.aboutTitle}</h2><p>{t.aboutText}</p><div className="tags"><span>{t.experienced}</span><span>Dufle Hospital</span><span>{t.location}</span></div><a className="link" href="#appointment">{t.schedule} <ArrowRight /></a></div></section>
-        <section className="experience section" id="experience"><div className="experience-heading"><div><p className="label">{t.history}</p><h2>{t.historyTitle}</h2></div><p>{t.historyText}</p></div><div className="experience-list">{experience.map((item, index) => <article className={item.current ? "experience-card current" : "experience-card"} key={item.hospital}><span className="hospital-mark" aria-hidden="true">{item.mark}</span><div><div className="experience-title"><h3>{item.hospital}</h3>{item.current && <small>{t.current}</small>}</div><p>{t.roles[index]}</p><span>{item.dates} <i>·</i> {item.duration}</span></div></article>)}</div></section>
-        <section className="services section" id="services"><div className="title"><div><p className="label">{t.servicesLabel}</p><h2>{t.servicesTitle}</h2></div><p>{t.servicesText}</p></div><div className="cards">{t.serviceNames.map((name, index) => <article key={name}><small>0{index + 1}</small><Stethoscope /><h3>{name}</h3><p>{t.serviceDescriptions[index]}</p><a href="#appointment">{t.consultation} <ArrowRight /></a></article>)}</div></section>
-        <section className="quote"><div><p className="label">{t.quoteLabel}</p><h2>{t.quote}</h2></div><a href="#contact"><ArrowRight /></a></section>
-        <section className="gallery section" id="gallery"><div className="title"><div><p className="label">{t.galleryLabel}</p><h2>{t.galleryTitle}</h2></div><a className="link" target="_blank" rel="noreferrer" href={fb}>{t.morePhotos} <Facebook /></a></div><div className="gallery-grid">{gallery.map((item, index) => <a className={`gallery-item gallery-item-${index + 1}`} href={item.src} target="_blank" rel="noreferrer" key={item.src}><img src={item.src} alt={t.galleryAlts[index]} loading="lazy" /><span><small>Dr Hassan Ali</small>{t.galleryTitles[index]}</span></a>)}</div></section>
-        <section className="appointment" id="appointment"><div><p className="label">{t.appointmentLabel}</p><h2>{t.appointmentTitle}</h2><p>{t.appointmentText}</p><span><Clock /> {t.availability}</span></div><form onSubmit={(event) => { event.preventDefault(); const formData = new FormData(event.currentTarget); const fullName = String(formData.get("fullName") ?? "").trim(); const phone = String(formData.get("phone") ?? "").trim(); if (!/^\p{L}[\p{L}\p{M}' -]*$/u.test(fullName)) { alert(t.invalidName); return; } if (!/^\+?[0-9 ]{7,15}$/.test(phone)) { alert(t.invalidPhone); return; } const date = String(formData.get("date") ?? ""); const time = String(formData.get("time") ?? ""); if (date < todayIso) { alert(t.oldDate); return; } if (date === todayIso && time < nowTime) { alert(t.oldTime); return; } const message = [`*${t.whatsappMessage}*`, "", `${t.fullName}: ${fullName}`, `${t.phone}: ${phone}`, `${t.date}: ${date}`, `${t.time}: ${time}`, `${t.reasonMessage}: ${formData.get("reason")}`].join("\n"); window.open(`${whatsapp}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer"); setSubmitted(true); }}>
+        <section className="about section" id="about"><div className="photo-frame"><img src={surgeryPhoto} alt={content.galleryItems[1]?.alt || t.galleryAlts[1]} /><b>15+<small>{t.years}</small></b></div><div><p className="label">{t.aboutLabel}</p><h2>{content.aboutTitle}</h2><p>{content.aboutText}</p><div className="tags"><span>{t.experienced}</span><span>Dufle Hospital</span><span>{t.location}</span></div><a className="link" href="#appointment">{t.schedule} <ArrowRight /></a></div></section>
+        <section className="experience section" id="experience"><div className="experience-heading"><div><p className="label">{t.history}</p><h2>{content.historyTitle}</h2></div><p>{content.historyText}</p></div><div className="experience-list">{experience.map((item, index) => <article className={item.current ? "experience-card current" : "experience-card"} key={item.hospital}><span className="hospital-mark" aria-hidden="true">{item.mark}</span><div><div className="experience-title"><h3>{item.hospital}</h3>{item.current && <small>{t.current}</small>}</div><p>{t.roles[index]}</p><span>{item.dates} <i>·</i> {item.duration}</span></div></article>)}</div></section>
+        <section className="services section" id="services"><div className="title"><div><p className="label">{t.servicesLabel}</p><h2>{content.servicesTitle}</h2></div><p>{content.servicesText}</p></div><div className="cards">{content.serviceNames.map((name, index) => <article key={name}><small>0{index + 1}</small><Stethoscope /><h3>{name}</h3><p>{content.serviceDescriptions[index]}</p><a href="#appointment">{t.consultation} <ArrowRight /></a></article>)}</div></section>
+        <section className="quote"><div><p className="label">{t.quoteLabel}</p><h2>{content.quote}</h2></div><a href="#contact"><ArrowRight /></a></section>
+        <section className="gallery section" id="gallery"><div className="title"><div><p className="label">{t.galleryLabel}</p><h2>{content.galleryTitle}</h2></div><a className="link" target="_blank" rel="noreferrer" href={fb}>{t.morePhotos} <Facebook /></a></div><div className="gallery-grid">{content.galleryItems.map((item, index) => <a className={`gallery-item gallery-item-${index + 1}`} href={item.src || "#gallery"} target={item.src ? "_blank" : undefined} rel={item.src ? "noreferrer" : undefined} key={`${item.src}-${index}`}><img src={item.src || asset("favicon.svg")} alt={item.alt} loading="lazy" /><span><small>Dr Hassan Ali</small>{item.title}</span></a>)}</div></section>
+        <section className="appointment" id="appointment"><div><p className="label">{t.appointmentLabel}</p><h2>{content.appointmentTitle}</h2><p>{content.appointmentText}</p><span><Clock /> {t.availability}</span></div><form onSubmit={(event) => { event.preventDefault(); const formData = new FormData(event.currentTarget); const fullName = String(formData.get("fullName") ?? "").trim(); const phone = String(formData.get("phone") ?? "").trim(); if (!/^\p{L}[\p{L}\p{M}' -]*$/u.test(fullName)) { alert(t.invalidName); return; } if (!/^\+?[0-9 ]{7,15}$/.test(phone)) { alert(t.invalidPhone); return; } const date = String(formData.get("date") ?? ""); const time = String(formData.get("time") ?? ""); if (date < todayIso) { alert(t.oldDate); return; } if (date === todayIso && time < nowTime) { alert(t.oldTime); return; } const message = [`*${t.whatsappMessage}*`, "", `${t.fullName}: ${fullName}`, `${t.phone}: ${phone}`, `${t.date}: ${date}`, `${t.time}: ${time}`, `${t.reasonMessage}: ${formData.get("reason")}`].join("\n"); window.open(`${whatsapp}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer"); setSubmitted(true); }}>
           {submitted ? <div className="success"><CheckCircle2 /><h3>{t.successTitle}</h3><p>{t.successText}</p></div> : <><label>{t.fullName}<input required name="fullName" placeholder={t.fullNamePlaceholder} autoComplete="name" inputMode="text" onInput={(event) => { event.currentTarget.value = keepLetters(event.currentTarget.value); }} /></label><label>{t.phone}<input required name="phone" placeholder={t.phonePlaceholder} autoComplete="tel" inputMode="tel" onInput={(event) => { event.currentTarget.value = keepDigits(event.currentTarget.value); }} /></label><div className="two"><label>{t.date}<input required name="date" type="date" min={todayIso} onChange={(event) => setSelectedDate(event.currentTarget.value)} /></label><label>{t.time}<input required name="time" type="time" min={timeMin} /></label></div><label>{t.reason}<textarea required name="reason" placeholder={t.reasonPlaceholder} /></label><button className="cta" type="submit"><Send /> {t.send}</button></>}</form></section>
-        <section className="contact section" id="contact"><div><p className="label">{t.contactLabel}</p><h2>{t.contactTitle}</h2><p>{t.contactText}</p></div><div className="contact-box"><a href={instagram} target="_blank" rel="noreferrer"><span className="social-symbol social-instagram"><FaInstagram /></span><span><small>Instagram</small>@drHassan74</span><ArrowRight /></a><a href={youtube} target="_blank" rel="noreferrer"><span className="social-symbol social-youtube"><FaYoutube /></span><span><small>YouTube</small>@drHassan74</span><ArrowRight /></a><a href={tiktok} target="_blank" rel="noreferrer"><span className="social-symbol social-tiktok"><FaTiktok /></span><span><small>TikTok</small>@drHassan19</span><ArrowRight /></a><a href={fb} target="_blank" rel="noreferrer"><span className="social-symbol social-facebook"><Facebook /></span><span><small>Facebook</small>Dr Hassan Ali</span><ArrowRight /></a><a href="tel:+252615516912"><span className="social-symbol social-phone"><FaPhone /></span><span><small>{language === "ar" ? "الهاتف" : language === "so" ? "Telefoon" : "Phone"}</small>61 5516912</span><ArrowRight /></a><a href="mailto:drhassanali26@gmail.com"><span className="social-symbol social-email"><FaEnvelope /></span><span><small>Email</small>drhassanali26@gmail.com</span><ArrowRight /></a><a href={whatsapp} target="_blank" rel="noreferrer"><span className="social-symbol social-whatsapp"><FaWhatsapp /></span><span><small>WhatsApp</small>+252 61 5516912</span><ArrowRight /></a><a href={messenger} target="_blank" rel="noreferrer"><span className="social-symbol social-messenger"><FaFacebookMessenger /></span><span><small>Messenger</small>Dr Hassan Ali</span><ArrowRight /></a><div className="contact-wide"><span className="social-symbol social-linkedin"><FaLinkedinIn /></span><span><small>LinkedIn</small>Dr Hassan Ali</span></div><div className="contact-wide"><MapPin /><span><small>{t.practiceLocation}</small>Dufle Hospital · Mogadishu</span></div></div></section>
+        <section className="contact section" id="contact"><div><p className="label">{t.contactLabel}</p><h2>{content.contactTitle}</h2><p>{content.contactText}</p></div><div className="contact-box"><a href={instagram} target="_blank" rel="noreferrer"><span className="social-symbol social-instagram"><FaInstagram /></span><span><small>Instagram</small>@drHassan74</span><ArrowRight /></a><a href={youtube} target="_blank" rel="noreferrer"><span className="social-symbol social-youtube"><FaYoutube /></span><span><small>YouTube</small>@drHassan74</span><ArrowRight /></a><a href={tiktok} target="_blank" rel="noreferrer"><span className="social-symbol social-tiktok"><FaTiktok /></span><span><small>TikTok</small>@drHassan19</span><ArrowRight /></a><a href={fb} target="_blank" rel="noreferrer"><span className="social-symbol social-facebook"><Facebook /></span><span><small>Facebook</small>Dr Hassan Ali</span><ArrowRight /></a><a href="tel:+252615516912"><span className="social-symbol social-phone"><FaPhone /></span><span><small>{language === "ar" ? "الهاتف" : language === "so" ? "Telefoon" : "Phone"}</small>61 5516912</span><ArrowRight /></a><a href="mailto:drhassanali26@gmail.com"><span className="social-symbol social-email"><FaEnvelope /></span><span><small>Email</small>drhassanali26@gmail.com</span><ArrowRight /></a><a href={whatsapp} target="_blank" rel="noreferrer"><span className="social-symbol social-whatsapp"><FaWhatsapp /></span><span><small>WhatsApp</small>+252 61 5516912</span><ArrowRight /></a><a href={messenger} target="_blank" rel="noreferrer"><span className="social-symbol social-messenger"><FaFacebookMessenger /></span><span><small>Messenger</small>Dr Hassan Ali</span><ArrowRight /></a><div className="contact-wide"><span className="social-symbol social-linkedin"><FaLinkedinIn /></span><span><small>LinkedIn</small>Dr Hassan Ali</span></div><div className="contact-wide"><MapPin /><span><small>{t.practiceLocation}</small>Dufle Hospital · Mogadishu</span></div></div></section>
       </main>
-      <footer><a className="logo" href="#top"><img src={asset("dr-hassan-profile.jpg")} alt="Dr Hassan Ali logo" /><span>Dr Hassan Ali<small>{t.specialty}</small></span></a><p>{t.disclaimer}</p><a href={fb} target="_blank" rel="noreferrer">Facebook</a><small>© {new Date().getFullYear()} Dr Hassan Ali. {t.rights}</small></footer>
+      <footer><a className="logo" href="#top"><img src={asset("dr-hassan-profile.jpg")} alt="Dr Hassan Ali logo" /><span>Dr Hassan Ali<small>{t.specialty}</small></span></a><p>{t.disclaimer}</p><a href={fb} target="_blank" rel="noreferrer">Facebook</a><a className="admin-footer-link" href="#admin">Admin</a><small>© {new Date().getFullYear()} Dr Hassan Ali. {t.rights}</small></footer>
     </>
   );
 }
